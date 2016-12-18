@@ -49,7 +49,7 @@ namespace UnitTestDebugLog
             char[] bTest = tests.ToCharArray();
             for (int i = 0; i < tests.Length; i++)
             {
-                eRETURN er = p.test(bTest[i]);
+                eRETURN er = p.CreateTree(bTest[i]);
                 if (i == 1)
                 {
                     Assert.AreEqual(er, eRETURN.DECODED);

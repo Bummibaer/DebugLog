@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DebugLog
 {
@@ -14,7 +11,7 @@ namespace DebugLog
         ERROR
     }
 
-    class TreeNode
+    public class TreeNode
     {
         List<TreeNode> lNodes = new List<TreeNode>();
         TreeNode previous;
@@ -31,7 +28,7 @@ namespace DebugLog
         public TreeNode(TreeNode tree, Parser.sNode c)
         {
             previous = tree;
-            
+
             value = c;
         }
 
@@ -79,32 +76,10 @@ namespace DebugLog
             }
         }
 
-        private int depth = 0;
-
-        internal eRETURN Expect(char c)
+        public TreeNode Find(int depth, Parser.sNode sn)
         {
-            eRETURN rc = eRETURN.OK;
-            Trace.Write("Expect " + c + "\t");
-            Parser.sNode sn = new Parser.sNode(c);
-            TreeNode tn;
-            if ((tn = slTree[depth].Find(sn)) != null)
-            {
-                depth++;
-                if (tn.Value.last)
-                {
-                    depth = 0;
-                    rc = eRETURN.DECODED;
-                }
-            }
-            else
-            {
-                depth--;
-                if (depth < 0) depth = 0;
-                rc = eRETURN.ERROR;
-
-            }
-            return rc;
+            Debug.Assert(slTree.Count > depth);
+            return slTree[depth].Find(sn);
         }
     }
-
 }

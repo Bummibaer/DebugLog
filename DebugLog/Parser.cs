@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 //using System.Text;
 //using System.Threading.Tasks;
 
@@ -13,18 +11,31 @@ namespace DebugLog
         /// <summary>
         /// literal
         /// %nd
-        /// %nf
+        /// %nf n float
+        /// %% arbitrary Literal
         /// 
         /// </summary>
         const char cFLOAT = (char)0xFF;
         const char cINT = (char)0xFE;
 
+        Queue<char> qChars = new Queue<char>();
+        enum eDecode
+        {
+            IDLE,
+            TYPE,
+            LENGTH,
+            DECODING
+        };
+        char type;
+        int length;
+        eDecode sDecode = eDecode.IDLE;
+        byte[] value = new byte[4];
+        int index = 0;
 
         public struct sNode : IEquatable<sNode>
         {
             public bool last;
             public char value;
-
 
             public sNode(char c)
             {
@@ -43,28 +54,17 @@ namespace DebugLog
                 return value == other.value;
             }
         }
+
         private Tree tree;
 
         public Parser(Tree tree)
         {
             this.tree = tree;
         }
-        Queue<char> qChars = new Queue<char>();
-        enum eDecode
+
+        public eRETURN CreateTree(char c)
         {
-            IDLE,
-            TYPE,
-            LENGTH,
-            DECODING
-        };
-        char type;
-        int length;
-        eDecode sDecode = eDecode.IDLE;
-        byte[] value = new byte[4];
-        int index = 0;
-        public eRETURN test(char c)
-        {
-            eRETURN er = tree.Expect(c);
+            eRETURN er = Expect(c);
             qChars.Enqueue(c);
             switch (er)
             {
@@ -78,7 +78,7 @@ namespace DebugLog
                     while (qChars.Count > 0)
                     {
                         Trace.WriteLine("Try again!");
-                        test(qChars.Dequeue());
+                        CreateTree(qChars.Dequeue());
                     }
                     break;
                 default:
@@ -97,7 +97,6 @@ namespace DebugLog
                                 sDecode = eDecode.IDLE;
                                 qChars.Clear();
                                 Trace.WriteLine("Couldn't decode : " + c);
-
                             }
                             else
                             {
@@ -131,7 +130,34 @@ namespace DebugLog
             }
             return er;
         }
+
+        private int depth = 0;
+
+        internal eRETURN Expect(char c)
+        {
+            eRETURN rc = eRETURN.OK;
+            Trace.Write("Expect " + c + "\t");
+            Parser.sNode sn = new Parser.sNode(c);
+            TreeNode tn;
+            if ((tn = tree.Find(depth,sn)) != null)
+            {
+                depth++;
+                if (tn.Value.last)
+                {
+                    depth = 0;
+                    rc = eRETURN.DECODED;
+                }
+            }
+            else
+            {
+                depth--;
+                if (depth < 0) depth = 0;
+                rc = eRETURN.ERROR;
+
+            }
+            return rc;
+        }
     }
 
-
 }
+
