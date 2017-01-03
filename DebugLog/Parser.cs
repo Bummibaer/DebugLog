@@ -32,37 +32,31 @@ namespace DebugLog
         byte[] value = new byte[4];
         int index = 0;
 
-        public struct sNode : IEquatable<sNode>
-        {
-            public bool last;
-            public char value;
-
-            public sNode(char c)
-            {
-                this.value = c;
-                last = false;
-            }
-
-            public sNode(char c, bool last)
-            {
-                this.value = c;
-                this.last = last;
-            }
-
-            public bool Equals(sNode other)
-            {
-                return value == other.value;
-            }
-        }
 
         private Tree tree;
 
-        public Parser(Tree tree)
+        public Parser(string[] codes)
         {
-            this.tree = tree;
+            tree = new Tree();
+            CreateTree(codes);
         }
 
-        public eRETURN CreateTree(char c)
+        bool CreateTree(string[] codes)
+        {
+            Tree tree = new Tree();
+            foreach (string s in codes)
+            {
+                char[] cs = s.ToCharArray();
+                for (int i = 0; i < s.Length; i++)
+                {
+                    tree.AddChildren(i, cs[i], i == (s.Length - 1));
+                }
+
+            }
+            return true;
+        }
+
+        public eRETURN Parse(char c)
         {
             eRETURN er = Expect(c);
             qChars.Enqueue(c);
@@ -78,7 +72,7 @@ namespace DebugLog
                     while (qChars.Count > 0)
                     {
                         Trace.WriteLine("Try again!");
-                        CreateTree(qChars.Dequeue());
+                        Parse(qChars.Dequeue());
                     }
                     break;
                 default:
@@ -117,7 +111,7 @@ namespace DebugLog
                                         throw new NotImplementedException("Float");
                                         break;
                                     default:
-                                        throw new NotImplementedException("Float");
+                                        throw new NotImplementedException("Type:" + type);
                                         break;
                                 }
                                 sDecode = eDecode.IDLE;
@@ -137,12 +131,11 @@ namespace DebugLog
         {
             eRETURN rc = eRETURN.OK;
             Trace.Write("Expect " + c + "\t");
-            Parser.sNode sn = new Parser.sNode(c);
             TreeNode tn;
-            if ((tn = tree.Find(depth,sn)) != null)
+            if ((tn = tree.Find(depth, c)) != null)
             {
                 depth++;
-                if (tn.Value.last)
+                if (tn.Last)
                 {
                     depth = 0;
                     rc = eRETURN.DECODED;
