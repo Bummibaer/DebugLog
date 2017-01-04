@@ -7,6 +7,7 @@ namespace DebugLog
     public enum eRETURN
     {
         OK,
+        NEXT,
         DECODED,
         ERROR
     }
@@ -16,7 +17,6 @@ namespace DebugLog
         INT,
         FLOAT
     }
-
 
     public class TreeNode : IEquatable<TreeNode>
     {
@@ -85,8 +85,23 @@ namespace DebugLog
 
         }
 
+        int count_length = 0;
         internal TreeNode Find(char c)
         {
+            foreach (TreeNode tn in lNodes)
+            {
+                if (tn.kind == eKind.CHAR)
+                {
+                    if (tn.value == c)
+                        return tn;
+                }
+                else
+                {
+                    if (tn.length < count_length)
+                    {
+                    }
+                }
+            }
             return lNodes.Find(x => x.value.Equals(c));
         }
 
@@ -95,7 +110,7 @@ namespace DebugLog
             lNodes.Add(c);
         }
 
-     }
+    }
 
     public class Tree
     {
@@ -108,36 +123,51 @@ namespace DebugLog
             LENGTH,
             KIND
         };
+
         eDecodeFormat decodeFormat = eDecodeFormat.CHAR;
-        int length = 0;
+        TreeNode tn = new TreeNode();
+
+        int tDepth = 0;
         public Tree()
         {
         }
-        public void AddChildren(int depth, char c, bool last)
+        public void AddChildren(char c, bool last)
         {
-            if (slTree.Count <= depth)
+            if (slTree.Count <= tDepth)
             {
                 slTree.Add(new TreeNode());
             }
-            TreeNode tn = new TreeNode();
             switch (decodeFormat)
             {
                 case eDecodeFormat.CHAR:
+                    tn = new TreeNode(c, last);
                     if (c == '%')
                     {
                         Trace.WriteLineIf(debug > 1, "Found %", "AC");
-                        length = 0;
                         decodeFormat = eDecodeFormat.LENGTH;
                     }
                     else
                     {
-                        tn = new TreeNode(c, last);
+                        TreeNode t = slTree[tDepth].Find(c);
+                        Trace.Write("Add " + tDepth + "\t " + c);
+                        if (t != null)
+                        {
+                            Trace.WriteLine("\tfound, Replace current");
+                            current = t;
+                        }
+                        else
+                        {
+                            Trace.WriteLine("\tnot found, add new Node");
+                            slTree[tDepth].Add(tn);
+                        }
+                        tDepth++;
                     }
                     break;
                 case eDecodeFormat.LENGTH:
-                    if ((c >= '0') && (c <= 9))
+                    if ((c >= '0') && (c <= '9'))
                     { // is Lenght 0-9
-                        length = c - 0x30; // is this safe?
+                        tn.length = c - 0x30; // is this safe?
+                        Trace.WriteLineIf(debug > 1, "Length = " + tn.length, "AC");
                         decodeFormat = eDecodeFormat.KIND;
                     }
                     else
@@ -147,24 +177,27 @@ namespace DebugLog
                     }
                     break;
                 case eDecodeFormat.KIND:
-                    tn = new TreeNode(c, eKind.INT, length, last);
+                    Trace.WriteLineIf(debug > 1, "New Type " + c, "AC");
+                    switch (c)
+                    {
+                        case 'd':
+                            tn.kind = eKind.INT;
+                            break;
+                        case 'f':
+                            tn.kind = eKind.FLOAT;
+                            break;
+                        default:
+                            throw new Exception("Unknown type specifier : " + c);
+                            break;
+                    }
+                    slTree[tDepth].Add(tn);  /// TODO nicht eindeutig?
+                    tDepth++;
                     decodeFormat = eDecodeFormat.CHAR;
                     break;
                 default:
                     break;
             }
-            TreeNode t = slTree[depth].Find(c);
-            Trace.Write("Add " + depth + "\t " + c);
-            if (t != null)
-            {
-                Trace.WriteLine("\tfound, Replace current");
-                current = t;
-            }
-            else
-            {
-                Trace.WriteLine("\tnot found, add new Node");
-                slTree[depth].Add(tn);
-            }
+            if (last) tDepth = 0;
         }
 
         public TreeNode Find(int depth, char c)

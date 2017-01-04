@@ -30,7 +30,7 @@ namespace UnitTestDebugLog
         {
             Parser p = new Parser(codes);
 
-            String tests = "ABAABACEFACDF123I22dAB";
+            String tests = "I22dABAABACEFACDF123I22dAB";
             char[] bTest = tests.ToCharArray();
             for (int i = 0; i < tests.Length; i++)
             {

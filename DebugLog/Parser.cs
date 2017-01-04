@@ -49,7 +49,7 @@ namespace DebugLog
                 char[] cs = s.ToCharArray();
                 for (int i = 0; i < s.Length; i++)
                 {
-                    tree.AddChildren(i, cs[i], i == (s.Length - 1));
+                    tree.AddChildren( cs[i], i == (s.Length - 1));
                 }
 
             }
